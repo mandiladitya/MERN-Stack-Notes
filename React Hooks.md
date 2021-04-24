@@ -121,3 +121,146 @@ If there is complicated state or lifecycle logic that is used by multiple compon
         });
         return data;
       };
+-------------------------------------------------------------------------
+(use instead of redux lol) => gives functional components state and life-cycle methods (faster to use than classes)
+- To use a basic state: .useState()
+- To use lifecycle methods: useEffect()
+- To define state changes by using reducers: .useReducer()
+- To access the state directly instead of props use Context
+
+#### useState():
+Returns an array, the first thing is what you want to keep track of. 
+The second is a function which allows you to edit it (aka set the state). 
+
+If you have multiple things to track the state of, use a seperate useState() for each one. 
+
+Usually destructured like follows: 
+````js
+  const [count, setCount] = useState(0);
+
+  const increment = () => {
+    setCount(count + 1);
+  };
+
+  const decrement = () => {
+    setCount(count - 1);
+  };
+
+  const reset = () => {
+    setCount(count = 0);
+  };
+````
+
+#### useEffect():
+A replacement for lifecycle methods in class-based components. i.e. component did mount / update etc. 
+````js
+import React, {useState, useEffect} from 'react';
+````
+
+useEffect is something we call, and we pass to it a function. 
+````js
+  useEffect(() => {
+    console.log('useEffect ran');
+    document.title = count
+  });
+````
+
+useEffect updates when the page loads and every time there is a state change.
+
+useEffect allows us to specify the things we care about: done via an array as the 2nd argument. Not required but ..
+
+````js
+useEffect(() => { 
+    console.log('useEffect ran');
+    document.title = count;
+  }, [count]);
+````
+
+just like with useState(), we can use the useEffect() as many times as we need to in a functional component.
+
+````js
+  useEffect(() => { //a mirror of 'componentDidMount'!
+    console.log('this should only run once!');
+  }, []); // will only run once when component mounts, due to empty array
+
+  useEffect(() => {
+    console.log('useEffect ran');
+    document.title = count
+  }, [count]);
+````
+
+now count is the second argument (its an array of things to include as state-changers), it ONLY runs when the count state is changed.
+
+ Cleaning up effect, aka "component did unmount" 
+
+ ````js
+const Note = ({note, removeNote}) => {
+  useEffect(() => {
+    console.log('Setting up effect!');
+
+    return () => {
+      console.log("Cleaning up effect!")
+      //runs when component unmounts! (aka note is deleted from dom)
+    }
+  }, [])
+````
+
+#### useReducer():
+A simpler way to define state changers by defining reducers.
+
+````js
+import React, {useState, useEffect, useReducer } from 'react';
+
+//need to define reducer function before you can call it. 
+const notesReducer = (state, action) => {
+  //state is an array of notes
+  //action provides info of action to perform
+
+  switch(action.type){
+    case 'POPULATE_NOTES':
+      return action.notes;
+    default: 
+      return state;
+  }
+}
+````
+
+Instead of useState, you call useReducer: 
+````js
+  const [notes, dispatch] = useReducer(notesReducer, [])
+````
+useReducer takes two arguments, the reducer function and the starting (or default value) 
+First item returns the thing to be tracked, in this case an array. 
+Second thing (dispatch) is a function you call and pass in a reducer.
+
+````js
+dispatch({ type: "POPULATE_NOTES", notes: getNotes() });
+````
+
+In essence: 
+If we find state is more complex, we can switch from useState to useReducer to store different logic in another function. 
+
+useState uses useReducer behind the scenes.
+
+#### CONTEXT / createContext() / useContext():
+1. first you have notes-context in the file providing context, and the file consuming context. Thats why you have it in its own file. 
+````js
+import React from 'react';
+const NotesContext = React.createContext()
+export default NotesContext;
+````
+2. In main component (that renders all related stuff):
+````js
+  return (
+    <NotesContext.Provider value={{ notes, dispatch }}>
+      <h1>Notes</h1>
+      <p>Add note</p>
+      <AddNoteForm />
+      <NoteList />
+    </NotesContext.Provider>
+  )
+````
+3. Inside the components that use this, grab the value like so: 
+````js
+  const {notes, dispatch} = useContext(NotesContext);
+````
